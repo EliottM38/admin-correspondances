@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Admin Correspondances</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="message" hidden></div>
+
+  <section id="connexion" class="centre">
+    <form id="formConnexion" class="carte">
+      <h1>Correspondances</h1>
+      <p class="discret">Espace admin</p>
+      <label class="champ"><span>E-mail</span>
+        <input id="email" type="email" autocomplete="username" required></label>
+      <label class="champ"><span>Mot de passe</span>
+        <input id="mdp" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Se connecter</button>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+    <header>
+      <strong>Correspondances · admin</strong>
+      <label>Ville <select id="villeChoix"></select></label>
+      <span id="qui" class="discret"></span>
+      <button id="deconnexion" class="contour">Déconnexion</button>
+    </header>
+    <nav id="nav"></nav>
+    <main id="contenu"></main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

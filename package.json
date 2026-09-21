@@ -1,0 +1,12 @@
+{
+  "name": "admin-correspondances",
+  "private": true,
+  "description": "Espace admin de l'app Correspondances",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "echo Rien a compiler"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
