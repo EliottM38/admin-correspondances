@@ -1,4 +1,5 @@
 /* Couleurs de l'app iPhone (direction « Crépuscule ») */
+[hidden] { display: none !important; }
 :root { --fond: #1B2038; --carte: #262B48; --discret: #A9AEC8; --accent: #8E7CFF; --encre: #14162A; --rouge: #FF7A8A; --vert: #4FE0D2; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--fond); color: #fff; font: 15px/1.45 -apple-system, "Segoe UI", sans-serif; }
