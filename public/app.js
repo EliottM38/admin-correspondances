@@ -251,6 +251,73 @@ function pageStyles(zone) {
   });
 }
 
+// Logos des réseaux : on importe un SVG (ou PNG), le navigateur le convertit en PNG 256 px, l'app le télécharge ensuite
+const CODES_RESEAUX = [["MRESO", "M réso (Grenoble)"], ["C38", "Cars Région (Isère)"], ["SNC", "TER Auvergne-Rhône-Alpes"], ["TGV", "TGV et Intercités"]];
+
+function convertirEnPng(fichier) {
+  return new Promise((fini, echec) => {
+    const lecteur = new FileReader();
+    lecteur.onerror = () => echec(new Error("Fichier illisible"));
+    lecteur.onload = () => {
+      const img = new Image();
+      img.onerror = () => echec(new Error("Image illisible (SVG ou PNG attendu)"));
+      img.onload = () => {
+        const taille = 256, l = img.naturalWidth || taille, h = img.naturalHeight || taille;
+        const echelle = Math.min(taille / l, taille / h);
+        const canevas = document.createElement("canvas");
+        canevas.width = canevas.height = taille;
+        canevas.getContext("2d").drawImage(img, (taille - l * echelle) / 2, (taille - h * echelle) / 2, l * echelle, h * echelle);
+        fini(canevas.toDataURL("image/png").split(",")[1]);
+      };
+      img.src = lecteur.result;
+    };
+    lecteur.readAsDataURL(fichier);
+  });
+}
+
+async function pageLogos(zone) {
+  const code = el("input", { placeholder: "ex. MRESO", list: "codesReseaux" });
+  const choix = el("datalist", { id: "codesReseaux" },
+    [...CODES_RESEAUX, ...etat.reseaux.map((r) => [r.code, r.nom])].map(([v, t]) => el("option", { value: v }, t)));
+  const fichier = el("input", { type: "file", accept: ".svg,image/svg+xml,image/png" });
+  const apercu = el("img", { class: "logo-apercu", alt: "" });
+  let image = null;
+  const liste = el("div", { class: "carte tableau" });
+
+  fichier.addEventListener("change", () => essayer(async () => {
+    image = fichier.files[0] ? await convertirEnPng(fichier.files[0]) : null;
+    apercu.src = image ? "data:image/png;base64," + image : "";
+  }));
+
+  async function recharger() {
+    const logos = await appeler("logos.liste");
+    liste.replaceChildren(el("h2", {}, "Logos en ligne"), logos.length
+      ? el("table", {}, el("tr", {}, ["Aperçu", "Réseau", "Mis à jour", ""].map((t) => el("th", {}, t))),
+        logos.map((l) => el("tr", {},
+          el("td", {}, el("img", { class: "logo-apercu", alt: l.reseau, src: "data:image/png;base64," + l.image })),
+          el("td", {}, l.reseau), el("td", {}, dateCourte(l.maj)),
+          el("td", { class: "actions" }, el("button", { class: "danger petit", onclick: () => essayer(async () => {
+            if (!confirm("Supprimer le logo " + l.reseau + " ?")) return;
+            await appeler("logos.supprimer", { id: l.id });
+            await recharger();
+          }) }, "Supprimer")))))
+      : el("p", { class: "discret" }, "Aucun logo pour l'instant."));
+  }
+
+  zone.append(el("div", { class: "carte" }, el("h2", {}, "Ajouter ou remplacer un logo"),
+    el("p", { class: "discret" }, "Le code est celui du réseau dans l'app (MRESO, C38, SNC, TGV…). Un logo existant est remplacé. Le SVG est converti en PNG ici, dans votre navigateur."),
+    el("label", { class: "champ" }, el("span", {}, "Code du réseau"), code), choix,
+    el("label", { class: "champ" }, el("span", {}, "Fichier (SVG ou PNG)"), fichier), apercu,
+    el("button", { onclick: () => essayer(async () => {
+      if (!image) throw new Error("Choisissez d'abord un fichier");
+      await appeler("logos.enregistrer", { valeurs: { reseau: code.value, image } });
+      dire("Logo enregistré : il apparaîtra dans l'app au prochain chargement");
+      fichier.value = ""; image = null; apercu.removeAttribute("src");
+      await recharger();
+    }) }, "Enregistrer")), liste);
+  await recharger();
+}
+
 // Avis : filtres, répartition des réponses, liste, export CSV
 async function pageAvis(zone) {
   const ligne = el("input", { placeholder: "ex. C1" });
@@ -373,6 +440,7 @@ const PAGES = [
   { id: "questions", titre: "Questions", roles: ["editeur"], afficher: pageQuestions },
   { id: "annonces", titre: "Annonces", roles: ["editeur"], afficher: pageAnnonces },
   { id: "styles", titre: "Formes et couleurs", roles: ["editeur"], afficher: pageStyles },
+  { id: "logos", titre: "Logos des réseaux", roles: ["editeur"], afficher: pageLogos },
   { id: "avis", titre: "Avis", roles: ["moderateur"], afficher: pageAvis },
   { id: "utilisateurs", titre: "Utilisateurs", roles: [], afficher: pageUtilisateurs },
   { id: "journal", titre: "Journal", roles: [], afficher: pageJournal },

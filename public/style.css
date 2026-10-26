@@ -38,3 +38,6 @@ th { color: var(--discret); font-size: 13px; }
 .barre span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
 .filtres { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; margin-bottom: 12px; }
 .filtres .champ { margin: 0; min-width: 150px; }
+
+.logo-apercu { width: 56px; height: 56px; object-fit: contain; background: #fff; border-radius: 12px; padding: 4px; display: block; margin: 8px 0; }
+.logo-apercu:not([src]) { display: none; }

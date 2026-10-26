@@ -19,6 +19,11 @@ const RESSOURCES = {
     table: "styles_lignes", roles: ["editeur"], tri: "ligne", filtres: ["ville", "ligne"],
     champs: ["ville", "ligne", "forme", "couleur", "couleur_texte"], unique: "ville,ligne",
   },
+  // Logos des réseaux : image PNG (convertie depuis le SVG dans le navigateur), lue par l'app via le serveur « partage »
+  logos: {
+    table: "logos_reseaux", roles: ["editeur"], tri: "reseau", filtres: [],
+    champs: ["reseau", "image"], unique: "reseau",
+  },
   avis: {
     table: "avis", roles: ["moderateur"], tri: "cree", descendant: true, filtres: ["ville", "ligne"],
     champs: [], lectureSeule: true,
@@ -159,6 +164,15 @@ async function enregistrer(res, u, nom, r, p) {
   if (nom === "questions" && (!p.id || "reponses" in ligne) && !reponsesValides(ligne.reponses)) {
     return res.status(400).json({ erreur: "Une question a besoin d'au moins 2 réponses (code et libellé)" });
   }
+  if (nom === "logos") {
+    ligne.reseau = String(ligne.reseau || "").trim().toUpperCase();
+    if (!/^[A-Z0-9_]{1,20}$/.test(ligne.reseau)) return res.status(400).json({ erreur: "Code de réseau invalide (lettres et chiffres)" });
+    // On n'accepte qu'un vrai PNG en base64, de taille raisonnable (jamais de SVG : il pourrait contenir du code)
+    if (!/^iVBORw0KGgo[A-Za-z0-9+/=]+$/.test(String(ligne.image || "")) || ligne.image.length > 300000) {
+      return res.status(400).json({ erreur: "Image invalide ou trop lourde" });
+    }
+    ligne.maj = new Date().toISOString();
+  }
   if (nom === "styles") ligne.maj = new Date().toISOString();
   if (nom === "annonces" && !p.id) ligne.source = "manuel";
 
@@ -167,7 +181,7 @@ async function enregistrer(res, u, nom, r, p) {
   else if (r.unique) requete = supabase.from(r.table).upsert(ligne, { onConflict: r.unique });
   else requete = supabase.from(r.table).insert(ligne);
   const { data, error } = await requete.select().single();
-  if (!error) await journaliser(u, nom + ".enregistrer", data.id, ligne);
+  if (!error) await journaliser(u, nom + ".enregistrer", data.id, nom === "logos" ? { reseau: ligne.reseau } : ligne);
   return repondre(res, data, error);
 }
 
